@@ -38,7 +38,7 @@ jobs:
           targets: ${{ matrix.target }}
           toolchain: 'stable'
 
-      - uses: taiki-e/upload-rust-binary@v1
+      - uses: taiki-e/upload-rust-binary-action@v1
         with:
           bin: get_dir_hash
           include: |
