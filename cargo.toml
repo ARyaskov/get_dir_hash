@@ -1,0 +1,33 @@
+[package]
+name = "get_dir_hash"
+version = "0.1.0"
+edition = "2024"
+description = "Deterministic directory hashing with glob ignores and optional metadata."
+license = "MIT"
+repository = "https://github.com/ARyaskov/get_dir_hash"
+readme = "README.md"
+keywords = ["hash", "directory", "blake3", "glob", "deterministic"]
+categories = ["filesystem", "command-line-utilities"]
+
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "get_dir_hash"
+path = "src/bin/get_dir_hash.rs"
+
+[dependencies]
+blake3 = "1.8"
+walkdir = "2.5"
+globset = "0.4"
+time = { version = "0.3", features = ["formatting"] }
+pico-args = "0.5"
+
+[dev-dependencies]
+tempfile = "3.20"
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
