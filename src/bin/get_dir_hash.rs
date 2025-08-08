@@ -4,7 +4,7 @@
 
 use get_dir_hash::{Options, get_dir_hash};
 use pico_args::Arguments;
-use std::{env, path::PathBuf, process::ExitCode};
+use std::{env, ffi::OsString, path::PathBuf, process::ExitCode};
 use time::OffsetDateTime;
 
 fn print_help() {
@@ -43,18 +43,21 @@ fn main() -> ExitCode {
     let include_meta = pargs.contains("--include-metadata");
     let no_dot = pargs.contains("--no-dotfile");
 
-    let leftover: Vec<std::ffi::OsString> = pargs.finish();
+    let leftover: Vec<OsString> = pargs.finish();
     if !leftover.is_empty() {
-        eprintln!("get_dir_hash: unexpected argument(s): {:?}", leftover);
+        eprintln!("get_dir_hash: unexpected argument(s): {leftover:?}");
         return ExitCode::from(2);
     }
 
-    let mut opts = Options::default();
-    opts.follow_symlinks = follow;
-    opts.include_metadata = include_meta;
-    opts.ignore_patterns = ignores;
-    opts.ignore_files = ignore_files;
-    opts.load_dot_get_dir_hash_ignore = !no_dot;
+    // Build options in one go (no field reassignments)
+    let opts = Options {
+        follow_symlinks: follow,
+        include_metadata: include_meta,
+        ignore_patterns: ignores,
+        ignore_files,
+        load_dot_get_dir_hash_ignore: !no_dot,
+        ..Default::default() // keep other defaults (e.g., case_sensitive_paths)
+    };
 
     match get_dir_hash(&dir, &opts) {
         Ok(digest) => {
@@ -62,7 +65,7 @@ fn main() -> ExitCode {
                 .format(&time::format_description::well_known::Rfc3339)
                 .unwrap_or_default();
             println!("{digest}  {}", dir.display());
-            eprintln!("ok  {}  {}", ts, dir.display());
+            eprintln!("ok  {ts}  {}", dir.display());
             ExitCode::SUCCESS
         }
         Err(e) => {

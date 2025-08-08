@@ -5,18 +5,17 @@
 //! - Sort files by normalized relative path to guarantee stable order.
 //! - For each file: stream its content into an *inner* blake3 hasher,
 //!   then feed the outer hasher with record-framed data:
-//!     b"F\0" + path + b"\0" + content_digest + [metadata?].
+//!   b"F\0" + path + b"\0" + content_digest + [metadata?].
 //! - Finally, return the outer digest as lowercase hex.
 //!
 //! This crate intentionally keeps ignore semantics minimal (no `!` negations).
 
-use blake3::{Hash as Blake3Hash, Hasher as Blake3};
+use blake3::Hasher as Blake3;
 use globset::{Glob, GlobSet, GlobSetBuilder};
 use std::cmp::Ordering;
-use std::ffi::OsStr;
 use std::fs::{self, File, Metadata};
 use std::io::{self, Read};
-use std::path::{Component, Path, PathBuf};
+use std::path::{Path, PathBuf};
 use walkdir::WalkDir;
 
 /// Options controlling hashing behavior.
@@ -67,7 +66,6 @@ pub fn get_dir_hash(root: &Path, opts: &Options) -> io::Result<String> {
             Ok(e) => e,
             Err(e) => {
                 // Skip unreadable entries, but keep going.
-                // Professional tradeoff: you can decide to error instead.
                 eprintln!("get_dir_hash: warn: skipping entry: {e}");
                 continue;
             }
@@ -118,10 +116,10 @@ pub fn get_dir_hash(root: &Path, opts: &Options) -> io::Result<String> {
         out.update(b"\0");
         out.update(content_digest.as_bytes());
 
-        if opts.include_metadata {
-            if let Ok(md) = fs::metadata(&path) {
-                feed_metadata(&mut out, &md);
-            }
+        if opts.include_metadata
+            && let Ok(md) = fs::metadata(&path)
+        {
+            feed_metadata(&mut out, &md);
         }
     }
 
@@ -155,9 +153,9 @@ fn build_globset(root: &Path, opts: &Options) -> io::Result<GlobSet> {
         builder.add(Glob::new(&pat).map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?);
     }
 
-    Ok(builder
+    builder
         .build()
-        .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?)
+        .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))
 }
 
 /// Load ignore patterns from file (one per line, '#' comments).
@@ -170,7 +168,6 @@ fn load_patterns_file(path: &Path, builder: &mut GlobSetBuilder) -> io::Result<(
         }
         // We do not support leading '!' negation (keep the crate tiny).
         if line.starts_with('!') {
-            // Ignore silently for now;
             continue;
         }
         let pat = line.replace('\\', "/");
@@ -211,11 +208,11 @@ fn feed_metadata(out: &mut Blake3, md: &Metadata) {
     }
 
     // mtime (secs, nanos) — if available.
-    if let Ok(mt) = md.modified() {
-        if let Ok(dur) = mt.duration_since(std::time::UNIX_EPOCH) {
-            out.update(&dur.as_secs().to_le_bytes());
-            out.update(&(dur.subsec_nanos()).to_le_bytes());
-        }
+    if let Ok(mt) = md.modified()
+        && let Ok(dur) = mt.duration_since(std::time::UNIX_EPOCH)
+    {
+        out.update(&dur.as_secs().to_le_bytes());
+        out.update(&dur.subsec_nanos().to_le_bytes());
     }
 }
 
