@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/ARyaskov/get_dir_hash/actions/workflows/ci.yml/badge.svg)](https://github.com/ARyaskov/get_dir_hash/actions/workflows/ci.yml)
 [![Crates.io](https://img.shields.io/crates/v/get_dir_hash.svg)](https://crates.io/crates/get_dir_hash)
-[![Docs.rs](https://docs.rs/get_dir_hash/badge.svg)](https://docs.rs/get_dir_hash)
+![Crates.io Downloads (recent)](https://img.shields.io/crates/dr/get_dir_hash)
 
 > Deterministic **directory hashing** with glob ignores and optional metadata — powered by **BLAKE3**.  
 > Tiny, fast, and predictable. Great for cache keys, change detection, CI, and reproducible builds.
